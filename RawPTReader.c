@@ -16,6 +16,10 @@ typedef unsigned long long UInt64;
 typedef unsigned int UInt32;
 typedef unsigned short UInt16;
 typedef unsigned char UInt8;
+typedef long long Int64;
+typedef int Int32;
+typedef short Int16;
+typedef char Int8;
 
 typedef struct
 {
@@ -45,13 +49,13 @@ void handleGPT(void);
 void printGptInfo(GptHeader* gptHeader);
 void gptEntry(int entryNumber, int offset, int partitionEntrySize);
 bool isEmptyGPTSlot(int offset);
-int readSector(long long offset);
+int readSector(Int64 offset);
 void printHumanReadableSize(UInt64 number);
 void printGUID(int offset);
 
 int SectorSize = 512;
 FILE *file = NULL;
-unsigned char buffer[4096] = { 0 };
+UInt8 buffer[4096] = { 0 };
 char zeroGuid[16] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };
 UInt32 GptEntryCRC = 0xFFFFFFFF;
 UInt32 GptHeaderCRC = 0xFFFFFFFF;
@@ -281,10 +285,10 @@ bool isEmptyGPTSlot(int offset)
 	return memcmp(zeroGuid, buffer + offset, 16) == 0;
 }
 
-int readSector(long long offset)
+int readSector(Int64 offset)
 {
 	size_t BytesRead = 0;
-	long long remainingOffset = offset;
+	Int64 remainingOffset = offset;
 #ifdef DEBUG
 	printf("DEBUG\tReading sector at location %lld\n", offset);
 #endif // DEBUG
@@ -294,7 +298,7 @@ int readSector(long long offset)
 		fseek(file, 0x40000000, SEEK_CUR);
 		remainingOffset -= 0x40000000;
 	}
-	BytesRead = fseek(file, (long)remainingOffset, SEEK_CUR);
+	BytesRead = fseek(file, (Int32)remainingOffset, SEEK_CUR);
 #ifdef DEBUG
 	printf("DEBUG\tfseek returned %d\n", BytesRead);
 #endif

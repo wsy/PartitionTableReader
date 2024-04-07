@@ -106,6 +106,7 @@ int processingArgs(int argc, const char* argv[])
 
 void printUsage(const char *arg0)
 {
+	printf("Raw PartitionTable Reader v1.1\n");
 	printf("Usage:\n");
 	printf("\t%s fileName\n", arg0);
 	printf("\t%s fileName [<SectorSize>]\n", arg0);

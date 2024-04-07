@@ -73,7 +73,7 @@ int processingArgs(int argc, const char* argv[])
 {
 	if (argc > 2)
 	{
-		if (strcmp(argv[2], "4k") == 0 || strcmp(argv[2], "4K") == 0)
+		if (strcmp(argv[2], "4k") == 0 || strcmp(argv[2], "4K") == 0 || strcmp(argv[2], "4096") == 0)
 		{
 			SectorSize = 4096;
 		}
@@ -102,7 +102,7 @@ void printUsage(const char *arg0)
 	printf("Usage:\n");
 	printf("\t%s fileName\n", arg0);
 	printf("\t%s fileName [<SectorSize>]\n", arg0);
-	printf("\tValid SectorSize is either 512(default) or 4k or 4K\n");
+	printf("\tValid SectorSize is either \"512\"(default) or \"4k\" or \"4K\" or \"4096\"\n");
 	exit(0);
 }
 

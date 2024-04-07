@@ -16,12 +16,32 @@ typedef unsigned int UInt32;
 typedef unsigned short UInt16;
 typedef unsigned char UInt8;
 
+typedef struct
+{
+	char Signature[8];
+	UInt16 MinorRevision;
+	UInt16 MajorRevision;
+	UInt32 HeaderSize;
+	UInt32 HeaderCRC32;
+	UInt8 Reserved[4];
+	UInt64 CurrentLBA;
+	UInt64 BackupLBA;
+	UInt64 FirstUsableLBA;
+	UInt64 LastUsableLBA;
+	UInt8 DiskGUID[16];
+	UInt64 PartitionEntryOffset;
+	UInt32 PartitionEntryCount;
+	UInt32 PartitionEntrySize;
+	UInt32 PartitionEntryCRC32;
+} GptHeader;
+
 int processingArgs(int argc, const char* argv[]);
 void printUsage(const char *arg0);
 void handleMBR(void);
 void handleEBR(UInt64 extendedPartitionStartOffset, UInt64 offset);
 void mbrEntry(int offset);
 void handleGPT(void);
+void printGptInfo(GptHeader* gptHeader);
 void gptEntry(int entryNumber, int offset, int partitionEntrySize);
 bool isEmptyGPTSlot(int offset);
 int readSector(UInt64 offset);
@@ -187,19 +207,18 @@ void handleGPT()
 	int partitionEntrySize = 0;
 	int entryPerSector = 0;
 	readSector(SectorSize);
+	GptHeader* gptHeader = (GptHeader*) buffer;
 	if (buffer[0] != 'E' || buffer[1] != 'F' || buffer[2] != 'I' || buffer[3] != ' '
 		|| buffer[4] != 'P' || buffer[5] != 'A' || buffer[6] != 'R' || buffer[7] != 'T')
 	{
 		printf("Not a GPT disk!\n");
 		return;
 	}
-	numberOfPartitions = (*(int*)(buffer + 80));
-	partitionEntrySize = (*(int*)(buffer + 84));
+	numberOfPartitions = gptHeader -> PartitionEntryCount; // (*(int*)(buffer + 80));
+	partitionEntrySize = gptHeader -> PartitionEntrySize; // (*(int*)(buffer + 84));
 	entryPerSector = SectorSize / partitionEntrySize;
 	printf("GPT Disk.");
-	printf(" DiskID: ");
-	printGUID(56);
-	printf("\n");
+	printGptInfo(gptHeader);
 	for (i = 0; i < numberOfPartitions * partitionEntrySize / SectorSize; i++)
 	{
 		int j = 0;
@@ -209,6 +228,13 @@ void handleGPT()
 			gptEntry(i * entryPerSector + j, j * partitionEntrySize, partitionEntrySize);
 		}
 	}
+}
+
+void printGptInfo(GptHeader* gptHeader)
+{
+	printf(" Revision: %d.%d", gptHeader -> MajorRevision, gptHeader -> MinorRevision);
+	printf(" Header Size: %d bytes\n", gptHeader -> HeaderSize);
+	printf(" Disk ID: "); printGUID(56); printf(" Disk Size: "); printHumanReadableSize((gptHeader -> BackupLBA + 1) * SectorSize); printf("\n");
 }
 
 void gptEntry(int entryNumber, int offset, int partitionEntrySize)

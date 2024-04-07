@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "CRC32.h"
 
 typedef unsigned long long UInt64;
 typedef unsigned int UInt32;
@@ -52,6 +53,8 @@ int SectorSize = 512;
 FILE *file = NULL;
 unsigned char buffer[4096] = { 0 };
 char zeroGuid[16] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };
+UInt32 GptEntryCRC = 0xFFFFFFFF;
+UInt32 GptHeaderCRC = 0xFFFFFFFF;
 
 int main(int argc, const char * argv[])
 {
@@ -207,6 +210,7 @@ void handleGPT()
 	int partitionEntrySize = 0;
 	int entryPerSector = 0;
 	readSector(SectorSize);
+
 	GptHeader* gptHeader = (GptHeader*) buffer;
 	if (buffer[0] != 'E' || buffer[1] != 'F' || buffer[2] != 'I' || buffer[3] != ' '
 		|| buffer[4] != 'P' || buffer[5] != 'A' || buffer[6] != 'R' || buffer[7] != 'T')
@@ -214,20 +218,29 @@ void handleGPT()
 		printf("Not a GPT disk!\n");
 		return;
 	}
+
+	UInt32 actualHeaderCRC = gptHeader->HeaderCRC32;
+	UInt32 actualEntryCRC = gptHeader->PartitionEntryCRC32;
+	gptHeader->HeaderCRC32 = 0;
+	GptHeaderCRC = ~crc32(GptHeaderCRC, buffer, 92);
+
 	numberOfPartitions = gptHeader -> PartitionEntryCount; // (*(int*)(buffer + 80));
 	partitionEntrySize = gptHeader -> PartitionEntrySize; // (*(int*)(buffer + 84));
 	entryPerSector = SectorSize / partitionEntrySize;
-	printf("GPT Disk.");
+	printf("GPT Disk. Calculated CRC: %08X, Header CRC: %08X", GptHeaderCRC, actualHeaderCRC);
 	printGptInfo(gptHeader);
 	for (i = 0; i < numberOfPartitions * partitionEntrySize / SectorSize; i++)
 	{
 		int j = 0;
 		readSector(SectorSize * (i + 2));
+		GptEntryCRC = crc32(GptEntryCRC, buffer, SectorSize);
 		for (j = 0; j < entryPerSector; j++)
 		{
 			gptEntry(i * entryPerSector + j, j * partitionEntrySize, partitionEntrySize);
 		}
 	}
+	GptEntryCRC = ~GptEntryCRC;
+	printf("GPT Entry Calculated CRC: %08X, Header CRC: %08X\n", GptEntryCRC, actualEntryCRC);
 }
 
 void printGptInfo(GptHeader* gptHeader)

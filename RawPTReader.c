@@ -44,7 +44,7 @@ void handleGPT(void);
 void printGptInfo(GptHeader* gptHeader);
 void gptEntry(int entryNumber, int offset, int partitionEntrySize);
 bool isEmptyGPTSlot(int offset);
-int readSector(UInt64 offset);
+int readSector(long long offset);
 void printHumanReadableSize(UInt64 number);
 void printGUID(int offset);
 
@@ -268,10 +268,10 @@ bool isEmptyGPTSlot(int offset)
 	return memcmp(zeroGuid, buffer + offset, 16) == 0;
 }
 
-int readSector(UInt64 offset)
+int readSector(long long offset)
 {
-	int BytesRead = 0;
-	UInt64 remainingOffset = offset;
+	size_t BytesRead = 0;
+	long long remainingOffset = offset;
 #ifdef DEBUG
 	printf("DEBUG\tReading sector at location %lld\n", offset);
 #endif // DEBUG
@@ -281,7 +281,7 @@ int readSector(UInt64 offset)
 		fseek(file, 0x40000000, SEEK_CUR);
 		remainingOffset -= 0x40000000;
 	}
-	BytesRead = fseek(file, remainingOffset, SEEK_CUR);
+	BytesRead = fseek(file, (long)remainingOffset, SEEK_CUR);
 #ifdef DEBUG
 	printf("DEBUG\tfseek returned %d\n", BytesRead);
 #endif

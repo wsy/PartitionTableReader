@@ -25,7 +25,7 @@ void handleGPT(void);
 void gptEntry(int entryNumber, int offset, int partitionEntrySize);
 bool isEmptyGPTSlot(int offset);
 int readSector(UInt64 offset);
-void printHumanReadableNumber(UInt64 number);
+void printHumanReadableSize(UInt64 number);
 void printGUID(int offset);
 
 int SectorSize = 512;
@@ -119,9 +119,9 @@ void mbrEntry(int offset)
 	startByte = (*(unsigned int*)(buffer + offset + 8)) * (UInt64)SectorSize;
 	sizeInByte = (*(unsigned int*)(buffer + offset + 12)) * (UInt64)SectorSize;
 	printf(" Offset: ");
-	printHumanReadableNumber(startByte);
+	printHumanReadableSize(startByte);
 	printf("\tSize: ");
-	printHumanReadableNumber(sizeInByte);
+	printHumanReadableSize(sizeInByte);
 	printf("\tType: ");
 	if (partitionType == '\0')
 	{
@@ -163,9 +163,9 @@ void handleEBR(UInt64 extendedPartitionStartOffset, UInt64 offset)
 	sizeInByte = (*(unsigned int*)(buffer + 446 + 12)) * (UInt64)SectorSize;
 	printf("    LogicalDrive: ");
 	printf(" Offset: ");
-	printHumanReadableNumber(startByte);
+	printHumanReadableSize(startByte);
 	printf("\tSize: ");
-	printHumanReadableNumber(sizeInByte);
+	printHumanReadableSize(sizeInByte);
 	printf("\tType: LogicalDrive ");
 	printf("%02hhX\n", partitionType);
 	nextEBR = (*(unsigned int*)(buffer + 462 + 8)) * (UInt64)SectorSize;
@@ -229,9 +229,9 @@ void gptEntry(int entryNumber, int offset, int partitionEntrySize)
 	printGUID(offset + 16);
 	//printf("\n");
 	printf(" Offset: ");
-	printHumanReadableNumber(startByte);
+	printHumanReadableSize(startByte);
 	printf(" Size: ");
-	printHumanReadableNumber(sizeInByte);
+	printHumanReadableSize(sizeInByte);
 	printf(" Attribute: ");
 	printf("0x%016llX", *(UInt64*)&buffer[offset + 48]);
 	printf("\n");
@@ -267,14 +267,14 @@ int readSector(UInt64 offset)
 	return BytesRead != SectorSize;
 }
 
-void printHumanReadableNumber(UInt64 number)
+void printHumanReadableSize(UInt64 number)
 {
 	if (number > 0x3ffffffffffffUL)
 	{
-		printf(" ∞TiB    ∞GiB    ∞MiB    ∞KiB    ∞B");
+		printf("  ∞TiB    ∞GiB    ∞MiB    ∞KiB    ∞B");
 		return;
 	}
-	printf("%2dTiB ", (int)(number >> 40));
+	printf("%3dTiB ", (int)(number >> 40));
 	number &= 0x000000FFFFFFFFFFUL;
 	printf("%4dGiB ", (int)(number >> 30));
 	number &= 0x000000003FFFFFFFUL;

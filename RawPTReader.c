@@ -23,6 +23,21 @@ typedef char Int8;
 
 typedef struct
 {
+	UInt8 BootIndicator;
+	UInt8 StartingCHS[3];
+	UInt8 PartitionType;
+	UInt8 EndingCHS[3];
+	UInt32 StartingLBA;
+	UInt32 SizeInLBA;
+} MbrPartitionEntry;
+typedef struct
+{
+	UInt8 BootstrapCode[446];
+	MbrPartitionEntry PartitionEntries[4];
+	UInt16 Signature;
+} MbrHeader;
+typedef struct
+{
 	char Signature[8];
 	UInt16 MinorRevision;
 	UInt16 MajorRevision;
@@ -44,7 +59,7 @@ int processingArgs(int argc, const char* argv[]);
 void printUsage(const char *arg0);
 void handleMBR(void);
 void handleEBR(UInt64 extendedPartitionStartOffset, UInt64 offset);
-void mbrEntry(int offset);
+void mbrEntry(MbrPartitionEntry* entry);
 void handleGPT(void);
 void printGptInfo(GptHeader* gptHeader);
 void gptEntry(int entryNumber, int offset, int partitionEntrySize);
@@ -118,35 +133,37 @@ void printUsage(const char *arg0)
 void handleMBR()
 {
 	readSector(0L);
-	if (buffer[510] != 0x55 || buffer[511] != 0xAA) // 0xAA evaluates to integer -86
+	MbrHeader* mbrHeader = (MbrHeader*)buffer;
+	if (mbrHeader->Signature != 0xAA55) // 0xAA evaluates to integer -86
 	{
 		printf("Invalid MBR partition table!\n");
 		return;
 	}
+	MbrPartitionEntry* partitionEntry = mbrHeader->PartitionEntries;
 	printf("MBR Partitions:\n");
 	printf("  Partition#1:    ");
-	mbrEntry(446);
+	mbrEntry(&partitionEntry[0]);
 	printf("  Partition#2:    ");
-	mbrEntry(462);
+	mbrEntry(&partitionEntry[1]);
 	printf("  Partition#3:    ");
-	mbrEntry(478);
+	mbrEntry(&partitionEntry[2]);
 	printf("  Partition#4:    ");
-	mbrEntry(494);
+	mbrEntry(&partitionEntry[3]);
 }
 
-void mbrEntry(int offset)
+void mbrEntry(MbrPartitionEntry* entry)
 {
 	bool isActive = false;
 	unsigned char partitionType = '\0';
 	UInt64 startByte = 0;
 	UInt64 sizeInByte = 0;
-	if (buffer[offset] < 0)
+	if (entry->BootIndicator < 0)
 	{
 		isActive = true;
 	}
-	partitionType = buffer[offset + 4];
-	startByte = (*(unsigned int*)(buffer + offset + 8)) * (UInt64)SectorSize;
-	sizeInByte = (*(unsigned int*)(buffer + offset + 12)) * (UInt64)SectorSize;
+	partitionType = entry->PartitionType;
+	startByte = (entry->StartingLBA) * (UInt64)SectorSize;
+	sizeInByte = (entry->SizeInLBA) * (UInt64)SectorSize;
 	printf(" Offset: ");
 	printHumanReadableSize(startByte);
 	printf("\tSize: ");
@@ -176,20 +193,22 @@ void handleEBR(UInt64 extendedPartitionStartOffset, UInt64 offset)
 	UInt64 sizeInByte = 0;
 	UInt64 nextEBR = 0;
 	readSector(offset);
-	if (buffer[510] != 0x55 || buffer[511] != 0xAA) // 0xAA evaluates to integer -86
+	MbrHeader* ebrHeader = (MbrHeader*)buffer;
+	if (ebrHeader->Signature != 0xAA55) // 0xAA evaluates to integer -86
 	{
 		printf("    Invalid extended partition table!\n");
 		return;
 	}
-	partitionType = buffer[446 + 4];
+	MbrPartitionEntry* partitionEntry = ebrHeader->PartitionEntries;
+	partitionType = partitionEntry[0].PartitionType;
 #ifdef DEBUG
 	printf("DEBUG\tHandling EBR at offset %lld\n", offset);
 	printf("DEBUG\tRawData\tStartSector: %02hhX %02hhX %02hhX %02hhX\n", buffer[446 + 8 + 0], buffer[446 + 8 + 1], buffer[446 + 8 + 2], buffer[446 + 8 + 3]);
 	printf("DEBUG\tRawData\tSizeInSector: %02hhX %02hhX %02hhX %02hhX\n", buffer[446 + 12 + 0], buffer[446 + 12 + 1], buffer[446 + 12 + 2], buffer[446 + 12 + 3]);
 	printf("DEBUG\tRawData\tNextEBRSector: %02hhX %02hhX %02hhX %02hhX\n", buffer[462 + 8 + 0], buffer[462 + 8 + 1], buffer[462 + 8 + 2], buffer[462 + 8 + 3]);
 #endif
-	startByte = (*(unsigned int*)(buffer + 446 + 8)) * (UInt64)SectorSize + offset;
-	sizeInByte = (*(unsigned int*)(buffer + 446 + 12)) * (UInt64)SectorSize;
+	startByte = (partitionEntry[0].StartingLBA) * (UInt64)SectorSize + offset;
+	sizeInByte = (partitionEntry[0].SizeInLBA) * (UInt64)SectorSize;
 	printf("    LogicalDrive: ");
 	printf(" Offset: ");
 	printHumanReadableSize(startByte);
@@ -197,7 +216,7 @@ void handleEBR(UInt64 extendedPartitionStartOffset, UInt64 offset)
 	printHumanReadableSize(sizeInByte);
 	printf("\tType: LogicalDrive ");
 	printf("%02hhX\n", partitionType);
-	nextEBR = (*(unsigned int*)(buffer + 462 + 8)) * (UInt64)SectorSize;
+	nextEBR = (partitionEntry[1].StartingLBA) * (UInt64)SectorSize;
 	if (nextEBR != 0)
 	{
 #ifdef DEBUG

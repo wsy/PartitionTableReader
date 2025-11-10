@@ -215,6 +215,7 @@ void handleGPT()
 	int numberOfPartitions = 0;
 	int partitionEntrySize = 0;
 	int entryPerSector = 0;
+	UInt64 partitionEntryOffset = 2;
 	readSector(SectorSize);
 
 	GptHeader* gptHeader = (GptHeader*) buffer;
@@ -229,7 +230,7 @@ void handleGPT()
 	UInt32 actualEntryCRC = gptHeader->PartitionEntryCRC32;
 	gptHeader->HeaderCRC32 = 0;
 	GptHeaderCRC = ~crc32(GptHeaderCRC, buffer, 92);
-
+	partitionEntryOffset = gptHeader->PartitionEntryOffset;
 	numberOfPartitions = gptHeader -> PartitionEntryCount; // (*(int*)(buffer + 80));
 	partitionEntrySize = gptHeader -> PartitionEntrySize; // (*(int*)(buffer + 84));
 	entryPerSector = SectorSize / partitionEntrySize;
@@ -238,7 +239,7 @@ void handleGPT()
 	for (i = 0; i < numberOfPartitions * partitionEntrySize / SectorSize; i++)
 	{
 		int j = 0;
-		readSector(SectorSize * (i + 2));
+		readSector(SectorSize * (i + partitionEntryOffset));
 		GptEntryCRC = crc32(GptEntryCRC, buffer, SectorSize);
 		for (j = 0; j < entryPerSector; j++)
 		{

@@ -17,6 +17,19 @@ char zeroGuid[16] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
 UInt32 GptEntryCRC = 0xFFFFFFFF;
 UInt32 GptHeaderCRC = 0xFFFFFFFF;
 
+void printUsage(const char* arg0)
+{
+	printf("Raw PartitionTable Reader v2.0\n");
+	printf("Usage:\n");
+	printf("\t%s fileName\n\n", arg0);
+	printf("\t%s fileName <SectorSize>\n", arg0);
+	printf("\t\tValid SectorSize is either \"512\"(default) or \"512e\" or \"512E\" or \"4096\" or \"4k\" or \"4K\"\n\n");
+	printf("\t%s fileName <SectorSize> [-s <GPTHeaderSector>] [-v | -vv]\n", arg0);
+	printf("\t\tUse -s or -S to specify location of GPT Header.\n");
+	printf("\t\tUse -v or -vv to print verbose infomation.\n");
+	exit(0);
+}
+
 int main(int argc, const char * argv[])
 {
 	int result = processingArgs(argc, argv);
@@ -87,16 +100,6 @@ int processingArgs(int argc, const char* argv[])
 		return 0;
 	}
 	return -1;
-}
-
-void printUsage(const char *arg0)
-{
-	printf("Raw PartitionTable Reader v1.1\n");
-	printf("Usage:\n");
-	printf("\t%s fileName\n", arg0);
-	printf("\t%s fileName [<SectorSize>]\n", arg0);
-	printf("\tValid SectorSize is either \"512\"(default) or \"4k\" or \"4K\" or \"4096\"\n");
-	exit(0);
 }
 
 void handleMBR()

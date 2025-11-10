@@ -30,7 +30,7 @@ typedef struct
 	UInt32 HeaderCRC32;
 	UInt8 Reserved[4];
 	UInt64 CurrentLBA;
-	UInt64 BackupLBA;
+	UInt64 AlternateLBA;
 	UInt64 FirstUsableLBA;
 	UInt64 LastUsableLBA;
 	UInt8 DiskGUID[16];
@@ -252,7 +252,7 @@ void printGptInfo(GptHeader* gptHeader)
 {
 	printf(" Revision: %d.%d", gptHeader -> MajorRevision, gptHeader -> MinorRevision);
 	printf(" Header Size: %d bytes\n", gptHeader -> HeaderSize);
-	printf(" Disk ID: "); printGUID(56); printf(" Disk Size: "); printHumanReadableSize((gptHeader -> BackupLBA + 1) * SectorSize); printf("\n");
+	printf(" Disk ID: "); printGUID(56); printf(" Disk Size: "); printHumanReadableSize((gptHeader->AlternateLBA + 1) * SectorSize); printf("\n");
 }
 
 void gptEntry(int entryNumber, int offset, int partitionEntrySize)

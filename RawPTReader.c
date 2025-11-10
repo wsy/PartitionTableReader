@@ -69,6 +69,7 @@ void printHumanReadableSize(UInt64 number);
 void printGUID(int offset);
 
 int SectorSize = 512;
+int verbose = 0;
 FILE *file = NULL;
 UInt8 buffer[4096] = { 0 };
 char zeroGuid[16] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };
@@ -98,6 +99,24 @@ int main(int argc, const char * argv[])
 
 int processingArgs(int argc, const char* argv[])
 {
+	int currentArgIndex = 3;
+	while (currentArgIndex < argc)
+	{
+		const char* currentArg = argv[currentArgIndex];
+		if (strcmp(currentArg, "-v") == 0 || strcmp(currentArg, "-V") == 0 || strcmp(currentArg, "--verbose") == 0 || strcmp(currentArg, "--Verbose") == 0 || strcmp(currentArg, "--VERBOSE") == 0)
+		{
+			verbose += 1;
+		}
+		else if (strcmp(currentArg, "-vv") == 0 || strcmp(currentArg, "-VV") == 0 || strcmp(currentArg, "--veryverbose") == 0 || strcmp(currentArg, "--VeryVerbose") == 0 || strcmp(currentArg, "--VERYVERBOSE") == 0)
+		{
+			verbose += 2;
+		}
+		else
+		{
+			return -3;
+		}
+		currentArgIndex++;
+	}
 	if (argc > 2)
 	{
 		if (strcmp(argv[2], "4k") == 0 || strcmp(argv[2], "4K") == 0 || strcmp(argv[2], "4096") == 0)
@@ -254,7 +273,11 @@ void handleGPT()
 	partitionEntrySize = gptHeader -> PartitionEntrySize; // (*(int*)(buffer + 84));
 	entryPerSector = SectorSize / partitionEntrySize;
 	printf("GPT Disk. Calculated CRC: %08X, Header CRC: %08X", GptHeaderCRC, actualHeaderCRC);
-	printGptInfo(gptHeader);
+	if (verbose > 0)
+	{
+		printGptInfo(gptHeader);
+	}
+	printf("\n");
 	for (i = 0; i < numberOfPartitions * partitionEntrySize / SectorSize; i++)
 	{
 		int j = 0;
@@ -273,7 +296,11 @@ void printGptInfo(GptHeader* gptHeader)
 {
 	printf(" Revision: %d.%d", gptHeader -> MajorRevision, gptHeader -> MinorRevision);
 	printf(" Header Size: %d bytes\n", gptHeader -> HeaderSize);
-	printf(" Disk ID: "); printGUID(56); printf(" Disk Size: "); printHumanReadableSize((gptHeader->AlternateLBA + 1) * SectorSize); printf("\n");
+	printf(" Disk ID: "); printGUID(56); printf(" Disk Size: "); printHumanReadableSize((gptHeader->AlternateLBA + 1) * SectorSize);
+	if (verbose > 1)
+	{
+		printf("\n CurrentLBA: %016llX, AlternateLBA: %016llX, EntryLBA: %016llX", gptHeader -> CurrentLBA, gptHeader -> AlternateLBA, gptHeader->PartitionEntryOffset);
+	}
 }
 
 void gptEntry(int entryNumber, int offset, int partitionEntrySize)

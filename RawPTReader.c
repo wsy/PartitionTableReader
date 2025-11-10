@@ -133,7 +133,7 @@ int processingArgs(int argc, const char* argv[])
 		{
 			SectorSize = 4096;
 		}
-		else if (strcmp(argv[2], "512") == 0)
+		else if (strcmp(argv[2], "512") == 0 || strcmp(argv[2], "512e") == 0 || strcmp(argv[2], "512E") == 0)
 		{
 			SectorSize = 512;
 		}

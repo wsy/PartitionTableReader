@@ -272,7 +272,7 @@ void handleGPT()
 	numberOfPartitions = gptHeader -> PartitionEntryCount; // (*(int*)(buffer + 80));
 	partitionEntrySize = gptHeader -> PartitionEntrySize; // (*(int*)(buffer + 84));
 	entryPerSector = SectorSize / partitionEntrySize;
-	printf("GPT Disk. Calculated CRC: %08X, Header CRC: %08X", GptHeaderCRC, actualHeaderCRC);
+	printf("GPT Disk. Header Calculated CRC: %08X, Actual CRC: %08X", GptHeaderCRC, actualHeaderCRC);
 	if (verbose > 0)
 	{
 		printGptInfo(gptHeader);
@@ -289,7 +289,7 @@ void handleGPT()
 		}
 	}
 	GptEntryCRC = ~GptEntryCRC;
-	printf("GPT Entry Calculated CRC: %08X, Header CRC: %08X\n", GptEntryCRC, actualEntryCRC);
+	printf("GPT Entry Calculated CRC: %08X, Actual CRC: %08X\n", GptEntryCRC, actualEntryCRC);
 }
 
 void printGptInfo(GptHeader* gptHeader)

@@ -69,6 +69,7 @@ void printHumanReadableSize(UInt64 number);
 void printGUID(int offset);
 
 int SectorSize = 512;
+UInt64 GptSector = 1;
 int verbose = 0;
 FILE *file = NULL;
 UInt8 buffer[4096] = { 0 };
@@ -110,6 +111,15 @@ int processingArgs(int argc, const char* argv[])
 		else if (strcmp(currentArg, "-vv") == 0 || strcmp(currentArg, "-VV") == 0 || strcmp(currentArg, "--veryverbose") == 0 || strcmp(currentArg, "--VeryVerbose") == 0 || strcmp(currentArg, "--VERYVERBOSE") == 0)
 		{
 			verbose += 2;
+		}
+		else if (strcmp(currentArg, "-s") == 0 || strcmp(currentArg, "-S") == 0 || strcmp(currentArg, "--sector") == 0 || strcmp(currentArg, "--Sector") == 0 || strcmp(currentArg, "--SECTOR") == 0)
+		{
+			currentArgIndex++;
+			int result = sscanf(argv[currentArgIndex], "%lld", &GptSector);
+			if (result < 1)
+			{
+				return -4;
+			}
 		}
 		else
 		{
@@ -254,7 +264,7 @@ void handleGPT()
 	int partitionEntrySize = 0;
 	int entryPerSector = 0;
 	UInt64 partitionEntryOffset = 2;
-	readSector(SectorSize);
+	readSector(SectorSize * GptSector);
 
 	GptHeader* gptHeader = (GptHeader*) buffer;
 	if (buffer[0] != 'E' || buffer[1] != 'F' || buffer[2] != 'I' || buffer[3] != ' '

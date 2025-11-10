@@ -62,7 +62,12 @@ UInt32 GptHeaderCRC = 0xFFFFFFFF;
 
 int main(int argc, const char * argv[])
 {
-	processingArgs(argc, argv);
+	int result = processingArgs(argc, argv);
+	if (result < 0)
+	{
+		printUsage(argv[0]);
+		return result;
+	}
 	file = fopen(argv[1], "rb");
 	if (!file)
 	{
@@ -90,16 +95,12 @@ int processingArgs(int argc, const char* argv[])
 		}
 		else
 		{
-			return -1;
+			return -2;
 		}
 	}
 	if (argc > 1)
 	{
 		return 0;
-	}
-	else
-	{
-		printUsage(argv[0]);
 	}
 	return -1;
 }
